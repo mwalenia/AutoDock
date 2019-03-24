@@ -9,15 +9,15 @@ import pandas as pd
 
 def parse(filename):
     #Patterns for parsing dlg files
-    pattern=re.compile(r"DOCKED: USER    Estimated Free Energy of Binding")
-    pattern2=re.compile(r"DOCKED: MODEL")
-    pattern3=re.compile(r"Ligand PDBQT file = ")
-    pattern4=re.compile(r"This file was created at")
-    pattern5=re.compile(r"Macromolecule file used to create Grid Maps =")
-    pattern6=re.compile(r"Number of non-hydrogen atoms in ligand:")
-    pattern7=re.compile(r'RANKING')
-    pattern8=re.compile(r"DPF> ga_pop_size")
-    pattern9 = re.compile(r"DPF> ga_num_evals")
+    free_energy_pattern=re.compile(r"DOCKED: USER    Estimated Free Energy of Binding")
+    model_pattern=re.compile(r"DOCKED: MODEL")
+    ligand_file_pattern=re.compile(r"Ligand PDBQT file = ")
+    creation_date_pattern=re.compile(r"This file was created at")
+    macromolecule_pattern=re.compile(r"Macromolecule file used to create Grid Maps =")
+    nonhydrogen_count_pattern=re.compile(r"Number of non-hydrogen atoms in ligand:")
+    ranking_pattern=re.compile(r'RANKING')
+    dpf_greater_than_pop_size_pattern=re.compile(r"DPF> ga_pop_size")
+    dpf_greater_than_num_evals_pattern = re.compile(r"DPF> ga_num_evals")
 
     #Tables for data storage
     energy_values = []
@@ -26,41 +26,40 @@ def parse(filename):
     datetime = []
     protname = []
     ligeff = []
-    rmsddf = []
     rawrmsdt = []
     pop_size = []
     eval_num = []
 
     with open(filename,'rt') as in_file:
         for line in in_file:
-            if pattern9.search(line) != None:
+            if dpf_greater_than_num_evals_pattern.search(line) != None:
                 eval=re.findall(r"\b\d+\b",line)
                 eval=list(map(int,eval))
                 eval_num.append(eval)
-            if pattern8.search(line) != None:
+            if dpf_greater_than_pop_size_pattern.search(line) != None:
                 pop=re.findall(r"\b\d+\b",line)
                 pop=list(map(int,pop))
                 pop_size.append(pop)
-            if pattern7.search(line) != None:
+            if ranking_pattern.search(line) != None:
                 rawrmsd=re.findall(r"\s*(-?[\d+\.]+)",line)
                 rawrmsd=list(map(float,rawrmsd))
                 rawrmsdt.append(rawrmsd)
-            if pattern6.search(line) != None:
+            if nonhydrogen_count_pattern.search(line) != None:
                 hbonds=re.findall(r"\b\d+\b",line)
                 hbonds=int(hbonds[0])
-            if pattern5.search(line) != None:
+            if macromolecule_pattern.search(line) != None:
                 protein=re.findall(r"\=\s(.*)\.pdbqt", line)
                 protname.append(protein)
-            if pattern4.search(line) != None:
+            if creation_date_pattern.search(line) != None:
                 date=re.findall(r"\,\s(.*)", line)
                 datetime.append(date)
-            if pattern3.search(line) != None:
+            if ligand_file_pattern.search(line) != None:
                 ligand=re.findall(r"\"(.*)\.pdbqt\"", line)
                 ligands.append(ligand)
-            if pattern2.search(line) != None:
+            if model_pattern.search(line) != None:
                 run = re.findall(r"\b\d+\b",line)
                 runs.append(run)
-            if pattern.search(line) != None:
+            if free_energy_pattern.search(line) != None:
                 energy = re.findall(r"=\s*(-?[\d+\.]+)", line)
                 energy=list(map(float, energy))
                 energy_values.append(energy)
@@ -101,7 +100,4 @@ def parse(filename):
     data.fillna(method='ffill', inplace=True)
     data.columns=['Date','Protein','Run','Energy','Ligand eff','Ligand','Cluster_RMSD','Reference_RMSD','Pop_size','eval_num[k]']
     return data
-    #print(data)
-#parse(filename)
-
 
